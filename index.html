@@ -891,6 +891,21 @@
       loadSavedTargetData();
       buildWallpaperGrid();
     };
+    // --- DYNAMIC GITHUB PAGES FAVICON FIX ENGINE ---
+(function() {
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  
+  // Dynamically parses your live hosting directory folder structure (e.g., "/ambientroom/")
+  const pathSegments = window.location.pathname.split('/').filter(s => s.length > 0);
+  const repoBase = (window.location.hostname.includes('github.io') && pathSegments.length > 0) 
+    ? `/${pathSegments[0]}/` 
+    : './';
+    
+  link.href = repoBase + 'favicon.png';
+  document.head.appendChild(link);
+})();
   </script>
 </body>
 </html>
