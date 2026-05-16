@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sanctuary: Personal Study HUD Pro</title>
   
-  <!-- Premium Outfit Font Engine -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght=100;300;500;700;900&display=swap" rel="stylesheet">
@@ -442,12 +441,10 @@
 </head>
 <body>
 
-  <!-- Smart TV Dual-Layer Background Architecture -->
   <div id="bg-layer-1"></div>
   <div id="bg-layer-2"></div>
 
   <div class="dashboard" id="mainConsole">
-    <!-- Target Assignment Matrix HUD -->
     <div class="target-hud">
       <input type="text" id="aimInput" class="aim-box" placeholder="ENTER YOUR AIM TO BE DISPLAYED" oninput="saveTargetData()">
       
@@ -459,7 +456,6 @@
       </div>
     </div>
 
-    <!-- Modifiable Focus Clock Section -->
     <div class="timer-container">
       <div class="timer-display" id="timer" contenteditable="true" onfocus="pauseOnEdit()" onblur="updateTimeFromEdit()">01:00</div>
     </div>
@@ -470,14 +466,12 @@
       <button class="circle-btn" onclick="resetTimer()">■</button>
     </div>
 
-    <!-- Navigation Deck Modules -->
     <div class="deck-triggers">
       <button class="panel-btn" onclick="togglePanel('mixerPanel', true)">⚙ Mixer</button>
       <button class="panel-btn" onclick="togglePanel('bgPanel', true)">🖼 Themes</button>
       <button class="panel-btn" onclick="togglePanel('helpPanel', true)">❓ Help</button>
     </div>
 
-    <!-- MODULE 1: Audio Mixer Panel -->
     <div class="settings-panel" id="mixerPanel">
       <div class="panel-header">
         <h2>Audio Infrastructure</h2>
@@ -509,14 +503,12 @@
       </div>
     </div>
 
-    <!-- MODULE 2: Wallpaper Bundles Management Deck -->
     <div class="settings-panel" id="bgPanel">
       <div class="panel-header">
         <h2>Theme Catalog</h2>
         <button onclick="togglePanel('bgPanel', false)">✕</button>
       </div>
       
-      <!-- Category Selection Tabs -->
       <div class="bundle-tab-row">
         <button class="bundle-btn active" onclick="switchBundle('my_themes', this)">🏠 Workspace</button>
         <button class="bundle-btn" onclick="switchBundle('anime', this)">🌸 Anime</button>
@@ -531,7 +523,6 @@
       </div>
     </div>
 
-    <!-- MODULE 3: Comprehensive Manual Documentation Modal -->
     <div class="settings-panel" id="helpPanel">
       <div class="panel-header">
         <h2>Workspace Help Center</h2>
@@ -550,11 +541,12 @@
 
   <script>
     // --- HIGH-FIDELITY BUNDLED WALLPAPER REPOSITORY DATABASE ---
+    // Paths strictly corrected to 'images/' plural, plus fixed typo file path: 'gb_3.jpg'
     const themeRepository = {
       my_themes: [
-        { url: "image/bg_1.jpg", selected: true },
-        { url: "image/bg_2.jpg", selected: true },
-        { url: "image/bg_3.jpg", selected: true }
+        { url: "images/bg_1.jpg", selected: true },
+        { url: "images/bg_2.jpg", selected: true },
+        { url: "images/gb_3.jpg", selected: true } 
       ],
       anime: [
         { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: false },
@@ -631,10 +623,10 @@
     let countdown;
     let isRunning = false;
     let isBreakMode = false;
-    let timeLeft = 1 * 60; // Hard-coded default start time to 1 minute
+    let timeLeft = 1 * 60; // Set to 1-minute default focus block
     let userCustomFocusTime = 1 * 60; 
+    let microModulationInterval; // Internal engine processing variable
 
-    // Pointing directly to your local workspace alarm path
     const alarmAudio = new Audio("audio/alarm.mp3");
     alarmAudio.crossOrigin = "anonymous";
 
@@ -663,14 +655,39 @@
       updateTimerDisplay();
     }
 
+    // --- SUBTLE AUDIO ENVIRONMENT MODULATION ENGINE ---
+    // Loops ambient tracks perfectly while introducing realistic microscopic fluctuations in speed/volume
+    function startAudioModulation() {
+      microModulationInterval = setInterval(() => {
+        ['rain', 'piano'].forEach(trackKey => {
+          const track = tracks[trackKey];
+          if (activeTracks[trackKey] && track) {
+            const baseVol = parseFloat(document.getElementById(`vol-${trackKey}`).value);
+            
+            // Randomly micro-shifts volume by +/- 0.04 to mimic natural environments
+            const volShift = (Math.random() * 0.08) - 0.04;
+            track.volume = Math.max(0.05, Math.min(1, baseVol + volShift));
+            
+            // Randomly micro-shifts speed by +/- 0.015 for realistic lo-fi texture
+            const speedShift = (Math.random() * 0.03) - 0.015;
+            track.playbackRate = Math.max(0.92, Math.min(1.08, 1.0 + speedShift));
+          }
+        });
+      }, 3500); // Triggers shifting protocols seamlessly every 3.5 seconds
+    }
+
+    function stopAudioModulation() {
+      clearInterval(microModulationInterval);
+    }
+
     function toggleTimer() {
-      // Hardware warm-up pipelines
       Object.keys(tracks).forEach(key => { try { if(tracks[key]) tracks[key].play().then(() => tracks[key].pause()); } catch(e){} });
       try { alarmAudio.play().then(() => alarmAudio.pause()); } catch(e){}
 
       const playIcon = document.getElementById('startPlay');
       if (isRunning) {
         clearInterval(countdown);
+        stopAudioModulation();
         isRunning = false;
         playIcon.innerText = '▶';
         if (!isBreakMode) document.getElementById('timer').contentEditable = "true";
@@ -680,14 +697,17 @@
         playIcon.innerText = '❚❚';
         document.getElementById('timer').contentEditable = "false";
         
-        // Automated Sound Trigger: Instantly launches rain track if nothing is active yet
+        // Automated Sound Activation Pipeline: Autoplays rain asset immediately on startup
         if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
           toggleAudio('rain');
         }
 
+        startAudioModulation();
+
         countdown = setInterval(() => {
           if (timeLeft <= 0) {
             clearInterval(countdown);
+            stopAudioModulation();
             handleCycleCompletion();
           } else {
             timeLeft--;
@@ -729,6 +749,7 @@
 
     function resetTimer() {
       clearInterval(countdown);
+      stopAudioModulation();
       isRunning = false;
       isBreakMode = false;
       timeLeft = userCustomFocusTime;
@@ -760,7 +781,7 @@
       userSong: null
     };
 
-    // Automated loop engines enabled
+    // Hard-locking infinite looping mechanics natively
     tracks.rain.loop = true;
     tracks.piano.loop = true;
 
@@ -786,6 +807,7 @@
 
       if (!activeTracks[track]) {
         tracks[track].volume = slider.value;
+        tracks[track].playbackRate = 1.0; // Dynamic baseline reset
         tracks[track].play()
           .then(() => {
             activeTracks[track] = true;
@@ -859,8 +881,8 @@
     window.onload = () => {
       loadSavedTargetData();
       buildWallpaperGrid();
-      // Enforced exact direct folder reference for instant startup rendering
-      document.getElementById('bg-layer-1').style.backgroundImage = `url('image/bg_1.jpg')`;
+      // Target points perfectly to images/bg_1.jpg to prevent dark blank outs
+      document.getElementById('bg-layer-1').style.backgroundImage = `url('images/bg_1.jpg')`;
       setInterval(rotateWallpaper, 60000); 
     };
   </script>
