@@ -549,7 +549,7 @@
   </div>
 
   <script>
-    // Direct, relative routing configured to search the subdirectories cleanly
+    // --- EXPLICIT RELATIVE FILE REPOSITORY ARCHITECTURE ---
     const themeRepository = {
       my_themes: [
         { url: "images/bg_1.jpg", selected: true },
@@ -595,7 +595,6 @@
       buildWallpaperGrid();
     }
 
-    // Forceful layout overwrite updates both DOM visual layers instantly on click
     function changeBackground(imgUrl) {
       document.getElementById('bg-layer-1').style.backgroundImage = `url('${imgUrl}')`;
       document.getElementById('bg-layer-2').style.backgroundImage = `url('${imgUrl}')`;
@@ -676,7 +675,6 @@
       updateTimerDisplay();
     }
 
-    // --- SOUND ENGINE MODULATION DECK ---
     function startAudioModulation() {
       microModulationInterval = setInterval(() => {
         ['rain', 'piano'].forEach(trackKey => {
@@ -698,13 +696,12 @@
     }
 
     function toggleTimer() {
-      // Secure audio device mapping pipeline
       Object.keys(tracks).forEach(key => { 
         try { 
           if(tracks[key] && tracks[key].src) {
             tracks[key].play().then(() => {
               if (!activeTracks[key]) tracks[key].pause();
-            }).catch(e => console.log("Context primed safely"));
+            }).catch(e => console.log("Context initialized"));
           } 
         } catch(e){} 
       });
@@ -722,7 +719,6 @@
         playIcon.innerText = '❚❚';
         document.getElementById('timer').contentEditable = "false";
         
-        // Autoplay Lock: Instantly launches rain asset when user kicks off session via play button (▶)
         if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
           toggleAudio('rain');
         }
@@ -799,7 +795,7 @@
       document.getElementById('timer').innerText = `${minutes}:${seconds}`;
     }
 
-    // --- SYSTEM AUDIO DECK ---
+    // --- SYSTEM AUDIO OPERATIONS ---
     const tracks = {
       rain: new Audio("audio/rain.mp3"),
       piano: new Audio("audio/piano.mp3"),
@@ -906,7 +902,7 @@
       loadSavedTargetData();
       buildWallpaperGrid();
       
-      // Enforce the default layout mapping on boot sequence
+      // Set baseline default tracking styles explicitly on window bootup sequence
       document.getElementById('bg-layer-1').style.backgroundImage = "url('images/bg_1.jpg')";
       document.getElementById('bg-layer-2').style.backgroundImage = "url('images/bg_1.jpg')";
       
