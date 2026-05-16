@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ambient Room</title>
   
-  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="./favicon.png">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,6 @@
       --text-main: #f3f4f6;
     }
 
-    /* Fixed body styling - Stripped of background colors entirely */
     body, html {
       margin: 0;
       padding: 0;
@@ -34,7 +33,7 @@
       overflow: hidden;
     }
 
-    /* Absolute Raw Background Image Layer - Direct path assignment with zero overlay blocks */
+    /* Absolute Raw Background Image Layer - Zero Filters, Opacities, or Tints */
     #bg-surface {
       position: absolute;
       top: 0;
@@ -425,6 +424,19 @@
       box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
     }
 
+    .custom-file-upload {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #9ca3af;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     /* Bottom Information Instruction Label styling */
     .bottom-instruction-footer {
       position: absolute;
@@ -503,6 +515,11 @@
           </div>
           <input type="range" id="vol-userSong" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume('userSong')">
         </div>
+        
+        <label class="custom-file-upload">
+          📁 Upload Custom Local Study Song
+          <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(this)">
+        </label>
       </div>
     </div>
 
@@ -519,6 +536,11 @@
       <div class="mixer-group">
         <div class="wallpaper-selector-grid" id="thumbGrid"></div>
         <button class="commit-btn" onclick="togglePanel('bgPanel', false)">✓ Save Themes</button>
+        
+        <label class="custom-file-upload" style="margin-top:10px;">
+          🖼 Insert Custom Local Wallpaper File
+          <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
+        </label>
       </div>
     </div>
 
@@ -546,10 +568,6 @@
       { url: "images/gb_3.jpg", selected: false }
     ];
 
-    let activeBundle = 'my_themes';
-    let currentWallpaperIndex = 0;
-    let activeLayer = 1;
-
     function buildWallpaperGrid() {
       const grid = document.getElementById('thumbGrid');
       grid.innerHTML = '';
@@ -572,12 +590,6 @@
       });
     }
 
-    function switchBundle(bundleKey, targetBtn) {
-      document.querySelectorAll('.bundle-btn').forEach(b => b.classList.remove('active'));
-      targetBtn.classList.add('active');
-      buildWallpaperGrid();
-    }
-
     function changeBackground(imgUrl) {
       document.getElementById('bg-surface').style.backgroundImage = `url('${imgUrl}')`;
     }
@@ -587,6 +599,19 @@
       if (masterPool.length <= 1) return;
       currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
       changeBackground(masterPool[currentWallpaperIndex].url);
+    }
+
+    function handleImageUpload(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          themeRepository.forEach(w => w.selected = false);
+          themeRepository.push({ url: e.target.result, selected: true });
+          buildWallpaperGrid();
+          changeBackground(e.target.result);
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
     }
 
     // --- TIMELOCK ENGINE (20 MINUTES FOCUS BLOCKS) ---
@@ -769,6 +794,19 @@
 
     const activeTracks = { rain: false, piano: false, userSong: false };
 
+    function handleAudioUpload(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const objectURL = URL.createObjectURL(file);
+        
+        if (tracks.userSong) tracks.userSong.pause();
+        tracks.userSong = new Audio(objectURL);
+        tracks.userSong.loop = true;
+        
+        document.getElementById('userTrackName').innerText = file.name;
+      }
+    }
+
     function toggleAudio(track) {
       if (!tracks[track]) return;
       const btn = document.getElementById(`btn-${track}`);
@@ -790,7 +828,6 @@
       }
     }
 
-    // Dynamic Volume Handler link
     function changeVolume(track) {
       if (tracks[track]) {
         tracks[track].volume = document.getElementById(`vol-${track}`).value;
