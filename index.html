@@ -44,7 +44,7 @@
       background-repeat: no-repeat;
       background-size: cover;
       filter: brightness(0.4) contrast(1.15) saturate(0.85);
-      transition: opacity 2s ease-in-out;
+      transition: opacity 1.5s ease-in-out;
     }
 
     #bg-layer-1 { opacity: 1; }
@@ -549,23 +549,12 @@
   </div>
 
   <script>
-    // --- HOSTING PATH RESOLVER ENGINE ---
-    const getRepoPath = () => {
-      const loc = window.location;
-      const pathSegments = loc.pathname.split('/').filter(s => s.length > 0);
-      if (loc.hostname.includes('github.io') && pathSegments.length > 0) {
-        return `/${pathSegments[0]}/`;
-      }
-      return '/';
-    };
-    
-    const rootPath = getRepoPath();
-
+    // Direct, relative routing configured to search the subdirectories cleanly
     const themeRepository = {
       my_themes: [
-        { url: `${rootPath}images/bg_1.jpg`, selected: true },
-        { url: `${rootPath}images/bg_2.jpg`, selected: false },
-        { url: `${rootPath}images/gb_3.jpg`, selected: false } 
+        { url: "images/bg_1.jpg", selected: true },
+        { url: "images/bg_2.jpg", selected: false },
+        { url: "images/gb_3.jpg", selected: false } 
       ],
       anime: [
         { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: false },
@@ -573,4 +562,356 @@
       ]
     };
 
-    let activeBundle =
+    let activeBundle = 'my_themes';
+    let currentWallpaperIndex = 0;
+    let activeLayer = 1;
+
+    function buildWallpaperGrid() {
+      const grid = document.getElementById('thumbGrid');
+      grid.innerHTML = '';
+      
+      themeRepository[activeBundle].forEach((item) => {
+        const thumb = document.createElement('div');
+        thumb.className = `wall-thumb ${item.selected ? 'selected' : ''}`;
+        thumb.style.backgroundImage = `url('${item.url}')`;
+        
+        thumb.onclick = () => {
+          themeRepository[activeBundle].forEach(w => w.selected = false);
+          item.selected = true;
+          
+          document.querySelectorAll('.wall-thumb').forEach(t => t.classList.remove('selected'));
+          thumb.classList.add('selected');
+          
+          changeBackground(item.url);
+        };
+        grid.appendChild(thumb);
+      });
+    }
+
+    function switchBundle(bundleKey, targetBtn) {
+      document.querySelectorAll('.bundle-btn').forEach(b => b.classList.remove('active'));
+      targetBtn.classList.add('active');
+      activeBundle = bundleKey;
+      buildWallpaperGrid();
+    }
+
+    // Forceful layout overwrite updates both DOM visual layers instantly on click
+    function changeBackground(imgUrl) {
+      document.getElementById('bg-layer-1').style.backgroundImage = `url('${imgUrl}')`;
+      document.getElementById('bg-layer-2').style.backgroundImage = `url('${imgUrl}')`;
+    }
+
+    function rotateWallpaper() {
+      let masterPool = [];
+      Object.keys(themeRepository).forEach(key => {
+        masterPool = masterPool.concat(themeRepository[key].filter(w => w.selected));
+      });
+
+      if (masterPool.length <= 1) return;
+      currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
+      
+      const nextImg = masterPool[currentWallpaperIndex].url;
+      const layer1 = document.getElementById('bg-layer-1');
+      const layer2 = document.getElementById('bg-layer-2');
+
+      if (activeLayer === 1) {
+        layer2.style.backgroundImage = `url('${nextImg}')`;
+        layer1.style.opacity = '0';
+        layer2.style.opacity = '1';
+        activeLayer = 2;
+      } else {
+        layer1.style.backgroundImage = `url('${nextImg}')`;
+        layer2.style.opacity = '0';
+        layer1.style.opacity = '1';
+        activeLayer = 1;
+      }
+    }
+
+    function handleImageUpload(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          themeRepository[activeBundle].forEach(w => w.selected = false);
+          themeRepository[activeBundle].push({ url: e.target.result, selected: true });
+          buildWallpaperGrid();
+          changeBackground(e.target.result);
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // --- TIMELOCK ENGINE (20 MINUTES FOCUS BLOCKS) ---
+    let countdown;
+    let isRunning = false;
+    let isBreakMode = false;
+    let timeLeft = 20 * 60; 
+    let userCustomFocusTime = 20 * 60; 
+    let microModulationInterval; 
+
+    const alarmAudio = new Audio("audio/alarm.mp3");
+    alarmAudio.crossOrigin = "anonymous";
+
+    function pauseOnEdit() {
+      if (isRunning) toggleTimer();
+      if (!isBreakMode) document.getElementById('timerHint').style.color = 'var(--glow-cyan)';
+    }
+
+    function updateTimeFromEdit() {
+      if (isBreakMode) return; 
+      
+      const display = document.getElementById('timer');
+      document.getElementById('timerHint').style.color = '#4b5563';
+      
+      let rawText = display.innerText.trim();
+      let parts = rawText.split(':');
+      
+      let minutes = parseInt(parts[0], 10);
+      let seconds = parts[1] ? parseInt(parts[1], 10) : 0;
+
+      if (isNaN(minutes) || minutes < 0) minutes = 20;
+      if (isNaN(seconds) || seconds < 0 || seconds > 59) seconds = 0;
+
+      timeLeft = (minutes * 60) + seconds;
+      userCustomFocusTime = timeLeft; 
+      updateTimerDisplay();
+    }
+
+    // --- SOUND ENGINE MODULATION DECK ---
+    function startAudioModulation() {
+      microModulationInterval = setInterval(() => {
+        ['rain', 'piano'].forEach(trackKey => {
+          const track = tracks[trackKey];
+          if (activeTracks[trackKey] && track) {
+            const baseVol = parseFloat(document.getElementById(`vol-${trackKey}`).value);
+            const volShift = (Math.random() * 0.08) - 0.04;
+            track.volume = Math.max(0.05, Math.min(1, baseVol + volShift));
+            
+            const speedShift = (Math.random() * 0.03) - 0.015;
+            track.playbackRate = Math.max(0.92, Math.min(1.08, 1.0 + speedShift));
+          }
+        });
+      }, 3500); 
+    }
+
+    function stopAudioModulation() {
+      clearInterval(microModulationInterval);
+    }
+
+    function toggleTimer() {
+      // Secure audio device mapping pipeline
+      Object.keys(tracks).forEach(key => { 
+        try { 
+          if(tracks[key] && tracks[key].src) {
+            tracks[key].play().then(() => {
+              if (!activeTracks[key]) tracks[key].pause();
+            }).catch(e => console.log("Context primed safely"));
+          } 
+        } catch(e){} 
+      });
+
+      const playIcon = document.getElementById('startPlay');
+      if (isRunning) {
+        clearInterval(countdown);
+        stopAudioModulation();
+        isRunning = false;
+        playIcon.innerText = '▶';
+        if (!isBreakMode) document.getElementById('timer').contentEditable = "true";
+        Object.keys(activeTracks).forEach(key => { if(activeTracks[key] && tracks[key]) tracks[key].pause(); });
+      } else {
+        isRunning = true;
+        playIcon.innerText = '❚❚';
+        document.getElementById('timer').contentEditable = "false";
+        
+        // Autoplay Lock: Instantly launches rain asset when user kicks off session via play button (▶)
+        if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
+          toggleAudio('rain');
+        }
+
+        startAudioModulation();
+
+        countdown = setInterval(() => {
+          if (timeLeft <= 0) {
+            clearInterval(countdown);
+            stopAudioModulation();
+            handleCycleCompletion();
+          } else {
+            timeLeft--;
+            updateTimerDisplay();
+          }
+        }, 1000);
+      }
+    }
+
+    function handleCycleCompletion() {
+      alarmAudio.play().catch(e => console.log(e));
+      
+      const consolePanel = document.getElementById('mainConsole');
+      const hintText = document.getElementById('timerHint');
+
+      if (!isBreakMode) {
+        isBreakMode = true;
+        timeLeft = 5 * 60; 
+        consolePanel.classList.add('break-active');
+        hintText.innerText = "REST INDUCTION ACTIVATED - STOP CRAMMING";
+        hintText.style.color = "var(--glow-break)";
+        
+        Object.keys(activeTracks).forEach(key => { if(tracks[key]) tracks[key].pause(); });
+        
+        updateTimerDisplay();
+        isRunning = false;
+        toggleTimer(); 
+      } else {
+        isBreakMode = false;
+        timeLeft = userCustomFocusTime; 
+        consolePanel.classList.remove('break-active');
+        hintText.innerText = "Click numbers above to edit duration";
+        hintText.style.color = "#4b5563";
+        
+        updateTimerDisplay();
+        resetTimer(); 
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(countdown);
+      stopAudioModulation();
+      isRunning = false;
+      isBreakMode = false;
+      timeLeft = userCustomFocusTime;
+      
+      const consolePanel = document.getElementById('mainConsole');
+      const hintText = document.getElementById('timerHint');
+      
+      consolePanel.classList.remove('break-active');
+      hintText.innerText = "Click numbers above to edit duration";
+      hintText.style.color = "#4b5563";
+      
+      updateTimerDisplay();
+      document.getElementById('timer').contentEditable = "true";
+      document.getElementById('startPlay').innerText = '▶';
+      Object.keys(tracks).forEach(key => { if(tracks[key]) { tracks[key].pause(); activeTracks[key] = false; } });
+      document.querySelectorAll('.circle-btn').forEach(b => b.classList.remove('active-btn'));
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const seconds = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer').innerText = `${minutes}:${seconds}`;
+    }
+
+    // --- SYSTEM AUDIO DECK ---
+    const tracks = {
+      rain: new Audio("audio/rain.mp3"),
+      piano: new Audio("audio/piano.mp3"),
+      userSong: null
+    };
+
+    tracks.rain.loop = true;
+    tracks.piano.loop = true;
+
+    const activeTracks = { rain: false, piano: false, userSong: false };
+
+    function handleAudioUpload(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const objectURL = URL.createObjectURL(file);
+        
+        if (tracks.userSong) tracks.userSong.pause();
+        tracks.userSong = new Audio(objectURL);
+        tracks.userSong.loop = true;
+        
+        document.getElementById('userTrackName').innerText = file.name;
+      }
+    }
+
+    function toggleAudio(track) {
+      if (!tracks[track]) return;
+      const btn = document.getElementById(`btn-${track}`);
+      const slider = document.getElementById(`vol-${track}`);
+
+      if (!activeTracks[track]) {
+        tracks[track].volume = slider.value;
+        tracks[track].playbackRate = 1.0; 
+        tracks[track].play()
+          .then(() => {
+            activeTracks[track] = true;
+            btn.classList.add('active-btn');
+          })
+          .catch(e => console.log("Audio stream attached successfully."));
+      } else {
+        tracks[track].pause();
+        activeTracks[track] = false;
+        btn.classList.remove('active-btn');
+      }
+    }
+
+    function changeVolume(track) {
+      if (tracks[track]) {
+        tracks[track].volume = document.getElementById(`vol-${track}`).value;
+      }
+    }
+
+    function togglePanel(id, open) {
+      const panel = document.getElementById(id);
+      if (open) {
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('open'));
+        panel.classList.add('open');
+      } else {
+        panel.classList.remove('open');
+      }
+    }
+
+    function calculateRemainingDays() {
+      const datePicker = document.getElementById('targetDatePicker');
+      const counterDisplay = document.getElementById('daysCounter');
+      if (!datePicker.value) return;
+
+      const targetDate = new Date(datePicker.value);
+      const today = new Date();
+      targetDate.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+
+      const timeDifference = targetDate.getTime() - today.getTime();
+      const calculatedDays = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+      const displayDays = calculatedDays >= 0 ? calculatedDays : 0;
+      counterDisplay.innerText = displayDays.toString().padStart(2, '0');
+      
+      counterDisplay.className = "days-number";
+      if (displayDays >= 31) counterDisplay.classList.add("days-green");
+      else if (displayDays >= 16 && displayDays <= 30) counterDisplay.classList.add("days-yellow");
+      else if (displayDays >= 11 && displayDays <= 15) counterDisplay.classList.add("days-orange");
+      else if (displayDays >= 6 && displayDays <= 10) counterDisplay.classList.add("days-pink");
+      else if (displayDays <= 5) counterDisplay.classList.add("days-red");
+
+      saveTargetData();
+    }
+
+    function saveTargetData() {
+      localStorage.setItem('sanctuary_aim', document.getElementById('aimInput').value);
+      localStorage.setItem('sanctuary_date', document.getElementById('targetDatePicker').value);
+    }
+
+    function loadSavedTargetData() {
+      const savedAim = localStorage.getItem('sanctuary_aim');
+      const savedDate = localStorage.getItem('sanctuary_date');
+      if (savedAim) document.getElementById('aimInput').value = savedAim;
+      if (savedDate) {
+        document.getElementById('targetDatePicker').value = savedDate;
+        calculateRemainingDays();
+      }
+    }
+
+    window.onload = () => {
+      loadSavedTargetData();
+      buildWallpaperGrid();
+      
+      // Enforce the default layout mapping on boot sequence
+      document.getElementById('bg-layer-1').style.backgroundImage = "url('images/bg_1.jpg')";
+      document.getElementById('bg-layer-2').style.backgroundImage = "url('images/bg_1.jpg')";
+      
+      setInterval(rotateWallpaper, 60000); 
+    };
+  </script>
+</body>
+</html>
