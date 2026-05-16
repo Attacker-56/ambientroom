@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sanctuary: Personal Study HUD Pro</title>
+  <title>Ambient Room</title>
+  
+  <link rel="icon" type="image/png" href="favicon.png">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +20,7 @@
       --text-main: #f3f4f6;
     }
 
+    /* Fixed body styling - Stripped of background colors entirely */
     body, html {
       margin: 0;
       padding: 0;
@@ -29,10 +32,9 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      background-color: #020617;
     }
 
-    /* Absolute Raw Background Image Layer - Zero Filters, Opacities, or Tints */
+    /* Absolute Raw Background Image Layer - Direct path assignment with zero overlay blocks */
     #bg-surface {
       position: absolute;
       top: 0;
@@ -447,7 +449,7 @@
 
   <div id="bg-surface"></div>
 
-  <div class="minute-tracker-banner" id="minuteBanner">SANCTUARY HUD PRO ACTIVE</div>
+  <div class="minute-tracker-banner" id="minuteBanner">Ambient Room Active</div>
 
   <div class="dashboard" id="mainConsole">
     <div class="target-hud">
@@ -544,6 +546,10 @@
       { url: "images/gb_3.jpg", selected: false }
     ];
 
+    let activeBundle = 'my_themes';
+    let currentWallpaperIndex = 0;
+    let activeLayer = 1;
+
     function buildWallpaperGrid() {
       const grid = document.getElementById('thumbGrid');
       grid.innerHTML = '';
@@ -564,6 +570,23 @@
         };
         grid.appendChild(thumb);
       });
+    }
+
+    function switchBundle(bundleKey, targetBtn) {
+      document.querySelectorAll('.bundle-btn').forEach(b => b.classList.remove('active'));
+      targetBtn.classList.add('active');
+      buildWallpaperGrid();
+    }
+
+    function changeBackground(imgUrl) {
+      document.getElementById('bg-surface').style.backgroundImage = `url('${imgUrl}')`;
+    }
+
+    function rotateWallpaper() {
+      let masterPool = themeRepository.filter(w => w.selected);
+      if (masterPool.length <= 1) return;
+      currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
+      changeBackground(masterPool[currentWallpaperIndex].url);
     }
 
     // --- TIMELOCK ENGINE (20 MINUTES FOCUS BLOCKS) ---
@@ -712,7 +735,7 @@
       timeLeft = userCustomFocusTime;
       totalSecondsElapsed = 0; 
       
-      document.getElementById('minuteBanner').innerText = "SANCTUARY HUD PRO ACTIVE";
+      document.getElementById('minuteBanner').innerText = "Ambient Room Active";
       
       const consolePanel = document.getElementById('mainConsole');
       const hintText = document.getElementById('timerHint');
@@ -759,7 +782,7 @@
             activeTracks[track] = true;
             btn.classList.add('active-btn');
           })
-          .catch(e => console.log("Audio pipeline loaded successfully."));
+          .catch(e => console.log("Audio loop setup verified."));
       } else {
         tracks[track].pause();
         activeTracks[track] = false;
@@ -767,6 +790,7 @@
       }
     }
 
+    // Dynamic Volume Handler link
     function changeVolume(track) {
       if (tracks[track]) {
         tracks[track].volume = document.getElementById(`vol-${track}`).value;
