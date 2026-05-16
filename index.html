@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sanctuary: Personal Study HUD Pro</title>
+  
+  <!-- Premium Outfit Font Engine -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-glass: rgba(8, 12, 24, 0.78);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --glow-cyan: #00f2ff;
+      --glow-break: #a855f7; /* Royal Purple glow for Rest States */
+      --text-main: #f3f4f6;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Outfit', sans-serif;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background-color: #020617;
+    }
+
+    /* Smart TV Crossfade Background Layers */
+    #bg-layer-1, #bg-layer-2 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      filter: brightness(0.4) contrast(1.15) saturate(0.85);
+      transition: opacity 2s ease-in-out;
+    }
+
+    #bg-layer-1 { opacity: 1; }
+    #bg-layer-2 { opacity: 0; }
+
+    /* Main Console Container Dashboard */
+    .dashboard {
+      background: var(--bg-glass);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--border-glass);
+      border-radius: 32px;
+      padding: 40px;
+      width: 480px;
+      text-align: center;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(0, 242, 255, 0.02);
+      position: relative;
+      z-index: 10;
+      transition: border-color 0.5s ease;
+    }
+
+    .dashboard.break-active {
+      border-color: var(--glow-break);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(168, 85, 247, 0.05);
+    }
+
+    /* Spacious HUD Unit Layout */
+    .target-hud {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 25px;
+    }
+
+    .aim-box {
+      background: transparent;
+      border: none;
+      color: var(--glow-cyan);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      width: 100%;
+      text-align: center;
+      outline: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 10px;
+      transition: color 0.5s ease;
+    }
+
+    .dashboard.break-active .aim-box {
+      color: var(--glow-break);
+    }
+
+    .aim-box::placeholder {
+      color: rgba(0, 242, 255, 0.3);
+      font-weight: 300;
+      font-size: 1.1rem;
+    }
+
+    .countdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .countdown-box {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    /* Advanced Dynamic Bold Alert System */
+    .days-number {
+      font-size: 2.8rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      margin-right: 5px;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    /* Dynamic Urgency Color States */
+    .days-green { color: #4ade80 !important; text-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+    .days-yellow { color: #facc15 !important; text-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
+    .days-orange { color: #fb923c !important; text-shadow: 0 0 20px rgba(251, 146, 60, 0.4); }
+    .days-pink { color: #f472b6 !important; text-shadow: 0 0 20px rgba(244, 114, 182, 0.4); }
+    .days-red {
+      color: #f87171 !important;
+      text-shadow: 0 0 25px rgba(248, 113, 113, 0.6);
+      animation: pulseAlert 2s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      0% { text-shadow: 0 0 15px rgba(248, 113, 113, 0.4); }
+      100% { text-shadow: 0 0 30px rgba(248, 113, 113, 0.8); }
+    }
+
+    .target-date-picker {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f3f4f6;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    /* Editable Focus Clock Formatting */
+    .timer-container {
+      margin: 10px 0;
+      display: inline-block;
+    }
+
+    .timer-display {
+      font-size: 6.5rem;
+      font-weight: 100;
+      letter-spacing: -1px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 35px rgba(0, 242, 255, 0.2);
+      border: 1px dashed transparent;
+      padding: 0 15px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard.break-active .timer-display {
+      color: var(--glow-break);
+      text-shadow: 0 0 35px rgba(168, 85, 247, 0.2);
+    }
+
+    .timer-display[contenteditable="true"] {
+      border-color: rgba(0, 242, 255, 0.3);
+      background: rgba(255, 255, 255, 0.02);
+      outline: none;
+      font-weight: 300;
+      color: var(--glow-cyan);
+    }
+
+    .timer-hint {
+      font-size: 0.75rem;
+      color: #4b5563;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: -5px;
+      margin-bottom: 15px;
+      transition: color 0.3s ease;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin-bottom: 25px;
+    }
+
+    button {
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .circle-btn {
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+    }
+
+    .circle-btn:hover {
+      color: var(--glow-cyan);
+      transform: scale(1.1);
+    }
+
+    .dashboard.break-active .circle-btn:hover {
+      color: var(--glow-break);
+    }
+
+    .active-btn {
+      color: var(--glow-cyan) !important;
+      background: rgba(0, 242, 255, 0.06);
+      box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.15);
+    }
+
+    .deck-triggers {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .panel-btn {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #6b7280;
+    }
+
+    .panel-btn:hover {
+      color: var(--glow-cyan);
+    }
+
+    /* Slider Overlays & Modals */
+    .settings-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(6, 9, 18, 0.98);
+      border-radius: 32px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      padding: 40px;
+      box-sizing: border-box;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: scale(0.97);
+    }
+
+    .settings-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .panel-header h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin: 0;
+      color: #9ca3af;
+    }
+
+    .mixer-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      text-align: left;
+    }
+
+    .mixer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.01);
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .label-container {
+      display: flex;
+      flex-direction: column;
+      width: 140px;
+      overflow: hidden;
+    }
+
+    .label-text {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9ca3af;
+    }
+
+    .track-name-display {
+      font-size: 0.7rem;
+      color: var(--glow-cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    /* Bundle Tab Selector */
+    .bundle-tab-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .bundle-btn {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 12px;
+      border-radius: 20px;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .bundle-btn.active {
+      background: var(--glow-cyan);
+      color: #020617;
+      font-weight: 500;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 35%;
+      background: rgba(255, 255, 255, 0.08);
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #9ca3af;
+      cursor: pointer;
+    }
+
+    .wallpaper-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .wall-thumb {
+      height: 60px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      opacity: 0.4;
+      transition: all 0.2s ease;
+    }
+
+    .wall-thumb.selected {
+      border-color: var(--glow-cyan);
+      opacity: 1;
+    }
+
+    .custom-file-upload {
+      grid-column: span 3;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+
+    .help-content {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #9ca3af;
+      overflow-y: auto;
+    }
+    .help-content h3 {
+      color: var(--glow-cyan);
+      font-size: 0.9rem;
+      margin-top: 15px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Smart TV Dual-Layer Background Architecture -->
+  <div id="bg-layer-1"></div>
+  <div id="bg-layer-2"></div>
+
+  <div class="dashboard" id="mainConsole">
+    <!-- Target Assignment Matrix HUD -->
+    <div class="target-hud">
+      <input type="text" id="aimInput" class="aim-box" placeholder="ENTER YOUR AIM TO BE DISPLAYED" oninput="saveTargetData()">
+      
+      <div class="countdown-row">
+        <div class="countdown-box">
+          <span id="daysCounter" class="days-number">00</span> Days Remaining
+        </div>
+        <input type="date" id="targetDatePicker" class="target-date-picker" onchange="calculateRemainingDays()">
+      </div>
+    </div>
+
+    <!-- Modifiable Focus Clock Section -->
+    <div class="timer-container">
+      <div class="timer-display" id="timer" contenteditable="true" onfocus="pauseOnEdit()" onblur="updateTimeFromEdit()">25:00</div>
+    </div>
+    <div class="timer-hint" id="timerHint">Click numbers above to edit duration</div>
+    
+    <div class="control-row">
+      <button class="circle-btn" id="startPlay" onclick="toggleTimer()">▶</button>
+      <button class="circle-btn" onclick="resetTimer()">■</button>
+    </div>
+
+    <!-- Navigation Deck Modules -->
+    <div class="deck-triggers">
+      <button class="panel-btn" onclick="togglePanel('mixerPanel', true)">⚙ Mixer</button>
+      <button class="panel-btn" onclick="togglePanel('bgPanel', true)">🖼 Themes</button>
+      <button class="panel-btn" onclick="togglePanel('helpPanel', true)">❓ Help</button>
+    </div>
+
+    <!-- MODULE 1: Audio Mixer Panel -->
+    <div class="settings-panel" id="mixerPanel">
+      <div class="panel-header">
+        <h2>Audio Infrastructure</h2>
+        <button onclick="togglePanel('mixerPanel', false)">✕</button>
+      </div>
+      <div class="mixer-group">
+        <div class="mixer-row">
+          <button class="circle-btn" id="btn-rain" onclick="toggleAudio('rain')">🌧</button>
+          <div class="label-container"><span class="label-text">Gentle Rain</span></div>
+          <input type="range" id="vol-rain" min="0" max="1" step="0.01" value="0.4" oninput="changeVolume('rain')">
+        </div>
+        <div class="mixer-row">
+          <button class="circle-btn" id="btn-piano" onclick="toggleAudio('piano')">🎹</button>
+          <div class="label-container"><span class="label-text">Lofi Piano</span></div>
+          <input type="range" id="vol-piano" min="0" max="1" step="0.01" value="0.4" oninput="changeVolume('piano')">
+        </div>
+        <div class="mixer-row">
+          <button class="circle-btn" id="btn-userSong" onclick="toggleAudio('userSong')">🎵</button>
+          <div class="label-container">
+            <span class="label-text">Your Track</span>
+            <span class="track-name-display" id="userTrackName">No file selected</span>
+          </div>
+          <input type="range" id="vol-userSong" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume('userSong')">
+        </div>
+        <label class="custom-file-upload">
+          📁 Upload Custom Local Study Song
+          <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(this)">
+        </label>
+      </div>
+    </div>
+
+    <!-- MODULE 2: Wallpaper Bundles Management Deck -->
+    <div class="settings-panel" id="bgPanel">
+      <div class="panel-header">
+        <h2>Theme Catalog</h2>
+        <button onclick="togglePanel('bgPanel', false)">✕</button>
+      </div>
+      
+      <!-- Category Selection Tabs -->
+      <div class="bundle-tab-row">
+        <button class="bundle-btn active" onclick="switchBundle('anime', this)">🌸 Anime</button>
+        <button class="bundle-btn" onclick="switchBundle('nature', this)">🌲 Nature</button>
+        <button class="bundle-btn" onclick="switchBundle('dark', this)">🐦 Dark</button>
+        <button class="bundle-btn" onclick="switchBundle('light', this)">☀️ Light</button>
+        <button class="bundle-btn" onclick="switchBundle('city', this)">🏙 Cyber City</button>
+      </div>
+
+      <div class="mixer-group">
+        <div class="wallpaper-selector-grid" id="thumbGrid"></div>
+        <label class="custom-file-upload" style="margin-top:10px;">
+          🖼 Insert Custom Local Wallpaper File
+          <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
+        </label>
+      </div>
+    </div>
+
+    <!-- MODULE 3: Comprehensive Manual Documentation Modal -->
+    <div class="settings-panel" id="helpPanel">
+      <div class="panel-header">
+        <h2>Workspace Help Center</h2>
+        <button onclick="togglePanel('helpPanel', false)">✕</button>
+      </div>
+      <div class="help-content">
+        <h3>⏱ Customizable Timer Controls</h3>
+        <p>Pause the current timer sessions first, then simply click directly on the clock digits to write any custom length mapping (e.g., typing <code>45:00</code> or <code>50:00</code> for extended study periods).</p>
+        
+        <h3>🛑 Automatic Break Transition Mode</h3>
+        <p>When the focus clock finishes running, the application will execute an alarm bell ring. It automatically transitions directly into a locked <b>5-minute break cycle</b>, converting the panel into a calming deep purple mode to prevent unhealthy study cramming.</p>
+        
+        <h3>📁 Upload Personal Audio Files</h3>
+        <p>Inside the <b>Mixer</b> terminal menu, click the file directory upload block. Choose any MP3 from your device. The filename updates dynamically. Simply click the 🎵 indicator button to sync your performance tracking parameters.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- HIGH-FIDELITY BUNDLED WALLPAPER REPOSITORY DATABASE ---
+    const themeRepository = {
+      anime: [
+        { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: true },
+        { url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600", selected: true },
+        { url: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?q=80&w=600", selected: true }
+      ],
+      nature: [
+        { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=600", selected: false }
+      ],
+      dark: [
+        { url: "https://images.unsplash.com/photo-1502481851512-e9e2529bbbf9?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=600", selected: false }
+      ],
+      light: [
+        { url: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=600", selected: false }
+      ],
+      city: [
+        { url: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=600", selected: false },
+        { url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=600", selected: false }
+      ]
+    };
+
+    let activeBundle = 'anime';
+    let currentWallpaperIndex = 0;
+    let activeLayer = 1;
+
+    function buildWallpaperGrid() {
+      const grid = document.getElementById('thumbGrid');
+      grid.innerHTML = '';
+      
+      themeRepository[activeBundle].forEach((item) => {
+        const thumb = document.createElement('div');
+        thumb.className = `wall-thumb ${item.selected ? 'selected' : ''}`;
+        thumb.style.backgroundImage = `url('${item.url}')`;
+        thumb.onclick = () => {
+          item.selected = !item.selected;
+          thumb.classList.toggle('selected', item.selected);
+        };
+        grid.appendChild(thumb);
+      });
+    }
+
+    function switchBundle(bundleKey, targetBtn) {
+      document.querySelectorAll('.bundle-btn').forEach(b => b.classList.remove('active'));
+      targetBtn.classList.add('active');
+      activeBundle = bundleKey;
+      buildWallpaperGrid();
+    }
+
+    function rotateWallpaper() {
+      let masterPool = [];
+      Object.keys(themeRepository).forEach(key => {
+        masterPool = masterPool.concat(themeRepository[key].filter(w => w.selected));
+      });
+
+      if (masterPool.length === 0) return;
+
+      currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
+      const nextImg = masterPool[currentWallpaperIndex].url;
+
+      const layer1 = document.getElementById('bg-layer-1');
+      const layer2 = document.getElementById('bg-layer-2');
+
+      if (activeLayer === 1) {
+        layer2.style.backgroundImage = `url('${nextImg}')`;
+        layer1.style.opacity = '0';
+        layer2.style.opacity = '1';
+        activeLayer = 2;
+      } else {
+        layer1.style.backgroundImage = `url('${nextImg}')`;
+        layer2.style.opacity = '0';
+        layer1.style.opacity = '1';
+        activeLayer = 1;
+      }
+    }
+
+    function handleImageUpload(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          themeRepository[activeBundle].push({ url: e.target.result, selected: true });
+          buildWallpaperGrid();
+          alert("Custom wallpaper file added into active rotation directory!");
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // --- AUTOMATED BREAK ENGINE TIMELOCK ENGINE ---
+    let countdown;
+    let isRunning = false;
+    let isBreakMode = false;
+    let timeLeft = 25 * 60;
+    let userCustomFocusTime = 25 * 60; // Saves user setting memory profiles
+
+    // Native Mechanical Service Desk Alert Bell
+    const alarmAudio = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4c/Desk_bell_ring_one_time.ogg");
+    alarmAudio.crossOrigin = "anonymous";
+
+    function pauseOnEdit() {
+      if (isRunning) toggleTimer();
+      if (!isBreakMode) document.getElementById('timerHint').style.color = 'var(--glow-cyan)';
+    }
+
+    function updateTimeFromEdit() {
+      if (isBreakMode) return; // Locks break timing adjustments securely
+      
+      const display = document.getElementById('timer');
+      document.getElementById('timerHint').style.color = '#4b5563';
+      
+      let rawText = display.innerText.trim();
+      let parts = rawText.split(':');
+      
+      let minutes = parseInt(parts[0], 10);
+      let seconds = parts[1] ? parseInt(parts[1], 10) : 0;
+
+      if (isNaN(minutes) || minutes < 0) minutes = 25;
+      if (isNaN(seconds) || seconds < 0 || seconds > 59) seconds = 0;
+
+      timeLeft = (minutes * 60) + seconds;
+      userCustomFocusTime = timeLeft; // Update fallback profile records
+      updateTimerDisplay();
+    }
+
+    function toggleTimer() {
+      // Warm up user gesture hardware interfaces
+      Object.keys(tracks).forEach(key => { try { if(tracks[key]) tracks[key].play().then(() => tracks[key].pause()); } catch(e){} });
+      try { alarmAudio.play().then(() => alarmAudio.pause()); } catch(e){}
+
+      const playIcon = document.getElementById('startPlay');
+      if (isRunning) {
+        clearInterval(countdown);
+        isRunning = false;
+        playIcon.innerText = '▶';
+        if (!isBreakMode) document.getElementById('timer').contentEditable = "true";
+        Object.keys(activeTracks).forEach(key => { if(activeTracks[key] && tracks[key]) tracks[key].pause(); });
+      } else {
+        isRunning = true;
+        playIcon.innerText = '❚❚';
+        document.getElementById('timer').contentEditable = "false";
+        
+        // Auto background sound initialization protocols
+        if (!isBreakMode) {
+          if (!activeTracks.rain) toggleAudio('rain');
+          if (!activeTracks.piano) toggleAudio('piano');
+        }
+
+        countdown = setInterval(() => {
+          if (timeLeft <= 0) {
+            clearInterval(countdown);
+            handleCycleCompletion();
+          } else {
+            timeLeft--;
+            updateTimerDisplay();
+          }
+        }, 1000);
+      }
+    }
+
+    function handleCycleCompletion() {
+      alarmAudio.play().catch(e => console.log(e));
+      
+      const consolePanel = document.getElementById('mainConsole');
+      const hintText = document.getElementById('timerHint');
+
+      if (!isBreakMode) {
+        // TRANSITION TO BREAK INTERVAL
+        isBreakMode = true;
+        timeLeft = 5 * 60; // Hard locks 5-minute Rest sequences
+        consolePanel.classList.add('break-active');
+        hintText.innerText = "REST INDUCTION ACTIVATED - STOP CRAMMING";
+        hintText.style.color = "var(--glow-break)";
+        
+        // Pause work sounds during breaks
+        Object.keys(activeTracks).forEach(key => { if(tracks[key]) tracks[key].pause(); });
+        
+        updateTimerDisplay();
+        isRunning = false;
+        toggleTimer(); // Instantly fire break countdown automatic pipelines
+      } else {
+        // RETURN BACK TO STUDY PERIODS
+        isBreakMode = false;
+        timeLeft = userCustomFocusTime; // Returns to user customization values
+        consolePanel.classList.remove('break-active');
+        hintText.innerText = "Click numbers above to edit duration";
+        hintText.style.color = "#4b5563";
+        
+        updateTimerDisplay();
+        resetTimer(); // Halts, allowing the user to initiate the next block when ready
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(countdown);
+      isRunning = false;
+      isBreakMode = false;
+      timeLeft = userCustomFocusTime;
+      
+      const consolePanel = document.getElementById('mainConsole');
+      const hintText = document.getElementById('timerHint');
+      
+      consolePanel.classList.remove('break-active');
+      hintText.innerText = "Click numbers above to edit duration";
+      hintText.style.color = "#4b5563";
+      
+      updateTimerDisplay();
+      document.getElementById('timer').contentEditable = "true";
+      document.getElementById('startPlay').innerText = '▶';
+      Object.keys(tracks).forEach(key => { if(tracks[key]) { tracks[key].pause(); activeTracks[key] = false; } });
+      document.querySelectorAll('.circle-btn').forEach(b => b.classList.remove('active-btn'));
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const seconds = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer').innerText = `${minutes}:${seconds}`;
+    }
+
+    // --- SYSTEM AUDIO OPERATIONS ---
+    const tracks = {
+      rain: new Audio("https://upload.wikimedia.org/wikipedia/commons/0/08/Rain_on_roof_loop.ogg"),
+      piano: new Audio("https://upload.wikimedia.org/wikipedia/commons/4/41/Gymnop%C3%A9die_No._1_by_Erik_Satie%2C_performed_by_Kevin_MacLeod.mp3"),
+      userSong: null
+    };
+
+    const activeTracks = { rain: false, piano: false, userSong: false };
+
+    function handleAudioUpload(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const objectURL = URL.createObjectURL(file);
+        
+        if (tracks.userSong) tracks.userSong.pause();
+        tracks.userSong = new Audio(objectURL);
+        tracks.userSong.loop = true;
+        
+        document.getElementById('userTrackName').innerText = file.name;
+        alert(`Acoustic tracking channel locked: ${file.name}`);
+      }
+    }
+
+    function toggleAudio(track) {
+      if (!tracks[track]) {
+        alert("Please upload an audio file first!");
+        return;
+      }
+      const btn = document.getElementById(`btn-${track}`);
+      const slider = document.getElementById(`vol-${track}`);
+
+      if (!activeTracks[track]) {
+        tracks[track].volume = slider.value;
+        tracks[track].play()
+          .then(() => {
+            activeTracks[track] = true;
+            btn.classList.add('active-btn');
+          })
+          .catch(e => console.log("Interface loop parsing loaded."));
+      } else {
+        tracks[track].pause();
+        activeTracks[track] = false;
+        btn.classList.remove('active-btn');
+      }
+    }
+
+    function changeVolume(track) {
+      if (tracks[track]) {
+        tracks[track].volume = document.getElementById(`vol-${track}`).value;
+      }
+    }
+
+    // --- UI LAYERS ---
+    function togglePanel(id, open) {
+      const panel = document.getElementById(id);
+      if (open) {
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('open'));
+        panel.classList.add('open');
+      } else {
+        panel.classList.remove('open');
+      }
+    }
+
+    function calculateRemainingDays() {
+      const datePicker = document.getElementById('targetDatePicker');
+      const counterDisplay = document.getElementById('daysCounter');
+      if (!datePicker.value) return;
+
+      const targetDate = new Date(datePicker.value);
+      const today = new Date();
+      targetDate.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+
+      const timeDifference = targetDate.getTime() - today.getTime();
+      const calculatedDays = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+      const displayDays = calculatedDays >= 0 ? calculatedDays : 0;
+      counterDisplay.innerText = displayDays.toString().padStart(2, '0');
+      counterDisplay.className = "days-number";
+
+      if (displayDays >= 31) counterDisplay.classList.add("days-green");
+      else if (displayDays >= 16 && displayDays <= 30) counterDisplay.classList.add("days-yellow");
+      else if (displayDays >= 11 && displayDays <= 15) counterDisplay.classList.add("days-orange");
+      else if (displayDays >= 6 && displayDays <= 10) counterDisplay.classList.add("days-pink");
+      else if (displayDays <= 5) counterDisplay.classList.add("days-red");
+
+      saveTargetData();
+    }
+
+    function saveTargetData() {
+      localStorage.setItem('sanctuary_aim', document.getElementById('aimInput').value);
+      localStorage.setItem('sanctuary_date', document.getElementById('targetDatePicker').value);
+    }
+
+    function loadSavedTargetData() {
+      const savedAim = localStorage.getItem('sanctuary_aim');
+      const savedDate = localStorage.getItem('sanctuary_date');
+      if (savedAim) document.getElementById('aimInput').value = savedAim;
+      if (savedDate) {
+        document.getElementById('targetDatePicker').value = savedDate;
+        calculateRemainingDays();
+      }
+    }
+
+    window.onload = () => {
+      loadSavedTargetData();
+      buildWallpaperGrid();
+      document.getElementById('bg-layer-1').style.backgroundImage = `url('${themeRepository.anime[0].url}')`;
+      setInterval(rotateWallpaper, 60000); 
+    };
+  </script>
+</body>
+</html>
