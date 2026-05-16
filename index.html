@@ -32,7 +32,7 @@
       background-color: #020617;
     }
 
-    /* Wallpaper Surface layer - Brightness control handled cleanly here directly on the file layer */
+    /* Absolute Raw Background Image Layer - Zero Filters, Opacities, or Tints */
     #bg-surface {
       position: absolute;
       top: 0;
@@ -44,7 +44,6 @@
       background-position: center center;
       background-repeat: no-repeat;
       background-size: cover;
-      filter: brightness(0.35) contrast(1.1); /* Keeps theme immersive without masking */
     }
 
     /* Real-Time Minute Tracker HUD Message Banner */
@@ -664,7 +663,6 @@
             timeLeft--;
             totalSecondsElapsed++;
             
-            // Dynamic minute calculations mapped directly to your upper header element
             if (totalSecondsElapsed % 60 === 0) {
               const minutesOver = totalSecondsElapsed / 60;
               document.getElementById('minuteBanner').innerText = `${minutesOver} MIN OVER`;
@@ -761,7 +759,7 @@
             activeTracks[track] = true;
             btn.classList.add('active-btn');
           })
-          .catch(e => console.log("Audio load update handled successfully."));
+          .catch(e => console.log("Audio pipeline loaded successfully."));
       } else {
         tracks[track].pause();
         activeTracks[track] = false;
