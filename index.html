@@ -461,7 +461,7 @@
 
     <!-- Modifiable Focus Clock Section -->
     <div class="timer-container">
-      <div class="timer-display" id="timer" contenteditable="true" onfocus="pauseOnEdit()" onblur="updateTimeFromEdit()">25:00</div>
+      <div class="timer-display" id="timer" contenteditable="true" onfocus="pauseOnEdit()" onblur="updateTimeFromEdit()">01:00</div>
     </div>
     <div class="timer-hint" id="timerHint">Click numbers above to edit duration</div>
     
@@ -486,12 +486,12 @@
       <div class="mixer-group">
         <div class="mixer-row">
           <button class="circle-btn" id="btn-rain" onclick="toggleAudio('rain')">🌧</button>
-          <div class="label-container"><span class="label-text">Gentle Rain</span></div>
+          <div class="label-container"><span class="label-text">rain</span></div>
           <input type="range" id="vol-rain" min="0" max="1" step="0.01" value="0.4" oninput="changeVolume('rain')">
         </div>
         <div class="mixer-row">
           <button class="circle-btn" id="btn-piano" onclick="toggleAudio('piano')">🎹</button>
-          <div class="label-container"><span class="label-text">Lofi Piano</span></div>
+          <div class="label-container"><span class="label-text">piano</span></div>
           <input type="range" id="vol-piano" min="0" max="1" step="0.01" value="0.4" oninput="changeVolume('piano')">
         </div>
         <div class="mixer-row">
@@ -518,10 +518,8 @@
       
       <!-- Category Selection Tabs -->
       <div class="bundle-tab-row">
-        <button class="bundle-btn active" onclick="switchBundle('my_themes', this)">🏠 My Themes</button>
+        <button class="bundle-btn active" onclick="switchBundle('my_themes', this)">🏠 Workspace</button>
         <button class="bundle-btn" onclick="switchBundle('anime', this)">🌸 Anime</button>
-        <button class="bundle-btn" onclick="switchBundle('nature', this)">🌲 Nature</button>
-        <button class="bundle-btn" onclick="switchBundle('dark', this)">🐦 Dark</button>
       </div>
 
       <div class="mixer-group">
@@ -541,13 +539,10 @@
       </div>
       <div class="help-content">
         <h3>⏱ Customizable Timer Controls</h3>
-        <p>Pause the current timer sessions first, then simply click directly on the clock digits to write any custom length mapping (e.g., typing <code>45:00</code> or <code>50:00</code> for extended study periods).</p>
+        <p>Pause the current timer sessions first, then simply click directly on the clock digits to write any custom length mapping.</p>
         
         <h3>🛑 Automatic Break Transition Mode</h3>
-        <p>When the focus clock finishes running, the application will execute an alarm bell ring. It automatically transitions directly into a locked <b>5-minute break cycle</b>, converting the panel into a calming deep purple mode to prevent unhealthy study cramming.</p>
-        
-        <h3>📁 Upload Personal Audio Files</h3>
-        <p>Inside the <b>Mixer</b> terminal menu, click the file directory upload block. Choose any MP3 from your device. The filename updates dynamically. Simply click the 🎵 indicator button to sync your performance tracking parameters.</p>
+        <p>When the focus clock finishes running, the application executes your repository's alarm file. It automatically transitions directly into a locked 5-minute break cycle.</p>
       </div>
     </div>
 
@@ -555,7 +550,6 @@
 
   <script>
     // --- HIGH-FIDELITY BUNDLED WALLPAPER REPOSITORY DATABASE ---
-    // Modified to feature your root folder images under 'my_themes'
     const themeRepository = {
       my_themes: [
         { url: "image/bg_1.jpg", selected: true },
@@ -565,14 +559,6 @@
       anime: [
         { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: false },
         { url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600", selected: false }
-      ],
-      nature: [
-        { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600", selected: false },
-        { url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=600", selected: false }
-      ],
-      dark: [
-        { url: "https://images.unsplash.com/photo-1502481851512-e9e2529bbbf9?q=80&w=600", selected: false },
-        { url: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=600", selected: false }
       ]
     };
 
@@ -636,7 +622,6 @@
         reader.onload = function(e) {
           themeRepository[activeBundle].push({ url: e.target.result, selected: true });
           buildWallpaperGrid();
-          alert("Custom wallpaper file added into active rotation directory!");
         }
         reader.readAsDataURL(input.files[0]);
       }
@@ -646,10 +631,10 @@
     let countdown;
     let isRunning = false;
     let isBreakMode = false;
-    let timeLeft = 25 * 60;
-    let userCustomFocusTime = 25 * 60; 
+    let timeLeft = 1 * 60; // Hard-coded default start time to 1 minute
+    let userCustomFocusTime = 1 * 60; 
 
-    // Mapped your local repository alarm track here
+    // Pointing directly to your local workspace alarm path
     const alarmAudio = new Audio("audio/alarm.mp3");
     alarmAudio.crossOrigin = "anonymous";
 
@@ -670,7 +655,7 @@
       let minutes = parseInt(parts[0], 10);
       let seconds = parts[1] ? parseInt(parts[1], 10) : 0;
 
-      if (isNaN(minutes) || minutes < 0) minutes = 25;
+      if (isNaN(minutes) || minutes < 0) minutes = 1;
       if (isNaN(seconds) || seconds < 0 || seconds > 59) seconds = 0;
 
       timeLeft = (minutes * 60) + seconds;
@@ -679,6 +664,7 @@
     }
 
     function toggleTimer() {
+      // Hardware warm-up pipelines
       Object.keys(tracks).forEach(key => { try { if(tracks[key]) tracks[key].play().then(() => tracks[key].pause()); } catch(e){} });
       try { alarmAudio.play().then(() => alarmAudio.pause()); } catch(e){}
 
@@ -694,9 +680,9 @@
         playIcon.innerText = '❚❚';
         document.getElementById('timer').contentEditable = "false";
         
-        if (!isBreakMode) {
-          if (!activeTracks.rain) toggleAudio('rain');
-          if (!activeTracks.piano) toggleAudio('piano');
+        // Automated Sound Trigger: Instantly launches rain track if nothing is active yet
+        if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
+          toggleAudio('rain');
         }
 
         countdown = setInterval(() => {
@@ -768,14 +754,13 @@
     }
 
     // --- SYSTEM AUDIO OPERATIONS ---
-    // Paths configured to point directly to your repository's local audio folder contents
     const tracks = {
       rain: new Audio("audio/rain.mp3"),
       piano: new Audio("audio/piano.mp3"),
       userSong: null
     };
 
-    // Setting audio files to automatically loop
+    // Automated loop engines enabled
     tracks.rain.loop = true;
     tracks.piano.loop = true;
 
@@ -791,15 +776,11 @@
         tracks.userSong.loop = true;
         
         document.getElementById('userTrackName').innerText = file.name;
-        alert(`Acoustic tracking channel locked: ${file.name}`);
       }
     }
 
     function toggleAudio(track) {
-      if (!tracks[track]) {
-        alert("Please upload an audio file first!");
-        return;
-      }
+      if (!tracks[track]) return;
       const btn = document.getElementById(`btn-${track}`);
       const slider = document.getElementById(`vol-${track}`);
 
@@ -810,7 +791,7 @@
             activeTracks[track] = true;
             btn.classList.add('active-btn');
           })
-          .catch(e => console.log("Audio playback user gesture update initialized."));
+          .catch(e => console.log("Audio pipeline loaded."));
       } else {
         tracks[track].pause();
         activeTracks[track] = false;
@@ -824,7 +805,6 @@
       }
     }
 
-    // --- UI LAYERS ---
     function togglePanel(id, open) {
       const panel = document.getElementById(id);
       if (open) {
@@ -850,8 +830,8 @@
 
       const displayDays = calculatedDays >= 0 ? calculatedDays : 0;
       counterDisplay.innerText = displayDays.toString().padStart(2, '0');
+      
       counterDisplay.className = "days-number";
-
       if (displayDays >= 31) counterDisplay.classList.add("days-green");
       else if (displayDays >= 16 && displayDays <= 30) counterDisplay.classList.add("days-yellow");
       else if (displayDays >= 11 && displayDays <= 15) counterDisplay.classList.add("days-orange");
@@ -879,8 +859,8 @@
     window.onload = () => {
       loadSavedTargetData();
       buildWallpaperGrid();
-      // Initialize with your repo's local asset background
-      document.getElementById('bg-layer-1').style.backgroundImage = `url('${themeRepository.my_themes[0].url}')`;
+      // Enforced exact direct folder reference for instant startup rendering
+      document.getElementById('bg-layer-1').style.backgroundImage = `url('image/bg_1.jpg')`;
       setInterval(rotateWallpaper, 60000); 
     };
   </script>
