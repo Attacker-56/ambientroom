@@ -412,6 +412,29 @@
       opacity: 1;
     }
 
+    /* Premium Done / Commit Button Styling */
+    .commit-btn {
+      grid-column: span 3;
+      background: rgba(0, 242, 255, 0.1);
+      border: 1px solid var(--glow-cyan);
+      color: var(--glow-cyan);
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 500;
+      margin-top: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .commit-btn:hover {
+      background: var(--glow-cyan);
+      color: #020617;
+      box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    }
+
     .custom-file-upload {
       grid-column: span 3;
       background: rgba(255, 255, 255, 0.02);
@@ -516,6 +539,9 @@
 
       <div class="mixer-group">
         <div class="wallpaper-selector-grid" id="thumbGrid"></div>
+        
+        <button class="commit-btn" onclick="commitWallpaperSelection()">✓ Save Themes</button>
+        
         <label class="custom-file-upload" style="margin-top:10px;">
           🖼 Insert Custom Local Wallpaper File
           <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
@@ -541,7 +567,6 @@
 
   <script>
     // --- HIGH-FIDELITY BUNDLED WALLPAPER REPOSITORY DATABASE ---
-    // Added bulletproof continuous path references using relative './' anchors to lock onto GH Pages
     const themeRepository = {
       my_themes: [
         { url: "./images/bg_1.jpg", selected: true },
@@ -560,6 +585,8 @@
 
     function buildWallpaperGrid() {
       const grid = document.getElementById('thumbGrid');
+      // Save Done button element reference
+      const commitBtn = grid.querySelector('.commit-btn');
       grid.innerHTML = '';
       
       themeRepository[activeBundle].forEach((item) => {
@@ -579,6 +606,12 @@
       targetBtn.classList.add('active');
       activeBundle = bundleKey;
       buildWallpaperGrid();
+    }
+
+    // Force rendering sequence update instantly when saving selection
+    function commitWallpaperSelection() {
+      togglePanel('bgPanel', false);
+      rotateWallpaper();
     }
 
     function rotateWallpaper() {
@@ -623,11 +656,10 @@
     let countdown;
     let isRunning = false;
     let isBreakMode = false;
-    let timeLeft = 20 * 60; // Adjusted default focus timer session directly to 20 minutes
+    let timeLeft = 20 * 60; // 20 Minute Focus Session Baseline
     let userCustomFocusTime = 20 * 60; 
     let microModulationInterval; 
 
-    // Explicit root anchor file reference for alarm asset
     const alarmAudio = new Audio("./audio/alarm.mp3");
     alarmAudio.crossOrigin = "anonymous";
 
@@ -678,8 +710,7 @@
     }
 
     function toggleTimer() {
-      // Modern browsers block autoplay unless a user hits a button first. 
-      // This immediately initializes the audio context upon clicking play (▶)
+      // Repaired Audio Warmup Pipeline: Skips the separate alarm track to avoid playing it at startup
       Object.keys(tracks).forEach(key => { 
         try { 
           if(tracks[key] && tracks[key].src) {
@@ -689,7 +720,6 @@
           } 
         } catch(e){} 
       });
-      try { alarmAudio.play().then(() => alarmAudio.pause()); } catch(e){}
 
       const playIcon = document.getElementById('startPlay');
       if (isRunning) {
@@ -704,7 +734,7 @@
         playIcon.innerText = '❚❚';
         document.getElementById('timer').contentEditable = "false";
         
-        // Autoplay logic: Triggers your rain audio clip to run automatically right as the countdown begins
+        // Autoplay Logic: Instantly activates the rain track on start
         if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
           toggleAudio('rain');
         }
@@ -782,14 +812,12 @@
     }
 
     // --- SYSTEM AUDIO OPERATIONS ---
-    // Added direct explicit absolute folder tracking URLs to sync audio perfectly on deployment
     const tracks = {
       rain: new Audio("./audio/rain.mp3"),
       piano: new Audio("./audio/piano.mp3"),
       userSong: null
     };
 
-    // Hardcoded native loops to loop assets smoothly forever
     tracks.rain.loop = true;
     tracks.piano.loop = true;
 
@@ -889,8 +917,8 @@
     window.onload = () => {
       loadSavedTargetData();
       buildWallpaperGrid();
-      // Using direct fixed path layout architecture to build your default background cleanly on startup
-      document.getElementById('bg-layer-1').style.backgroundImage = `url('./images/bg_1.jpg')`;
+      // Locked start background cleanly to your primary repository path asset
+      document.getElementById('bg-layer-1').style.backgroundImage = "url('./images/bg_1.jpg')";
       setInterval(rotateWallpaper, 60000); 
     };
   </script>
