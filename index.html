@@ -32,23 +32,51 @@
       background-color: #020617;
     }
 
-    /* Smart TV Crossfade Background Layers */
-    #bg-layer-1, #bg-layer-2 {
+    /* Fixed Static Background Layer Behind Main Dark overlay */
+    #bg-surface {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      background-image: url('images/bg_1.jpg');
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    /* Black HUD Tint Overlay */
+    #hud-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: -1;
-      background-position: center center;
-      background-repeat: no-repeat;
-      background-size: cover;
-      filter: brightness(0.4) contrast(1.15) saturate(0.85);
-      transition: opacity 1.5s ease-in-out;
+      background-color: rgba(2, 6, 23, 0.65);
+      backdrop-filter: brightness(0.5) contrast(1.1) saturate(0.9);
+      transition: background-color 1s ease;
     }
 
-    #bg-layer-1 { opacity: 1; }
-    #bg-layer-2 { opacity: 0; }
+    /* Real-Time Minute Tracker HUD Message Banner */
+    .minute-tracker-banner {
+      position: absolute;
+      top: 30px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      color: var(--glow-cyan);
+      text-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+      animation: smoothPulse 3s infinite alternate;
+      z-index: 50;
+    }
+
+    @keyframes smoothPulse {
+      0% { opacity: 0.7; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
 
     /* Main Console Container Dashboard */
     .dashboard {
@@ -162,7 +190,7 @@
       border-radius: 8px;
     }
 
-    /* Editable Focus Clock Formatting */
+    /* Focus Clock Formatting */
     .timer-container {
       margin: 10px 0;
       display: inline-block;
@@ -344,7 +372,6 @@
       margin-top: 2px;
     }
 
-    /* Bundle Tab Selector */
     .bundle-tab-row {
       display: flex;
       gap: 8px;
@@ -395,7 +422,6 @@
       box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
     }
 
-    /* Premium Save Button Styling */
     .commit-btn {
       background: rgba(0, 242, 255, 0.1);
       border: 1px solid var(--glow-cyan);
@@ -418,38 +444,31 @@
       box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
     }
 
-    .custom-file-upload {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px dashed rgba(255, 255, 255, 0.1);
-      padding: 10px;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 0.8rem;
-      cursor: pointer;
-      color: #9ca3af;
-      width: 100%;
-      box-sizing: border-box;
+    /* Bottom Information Instruction Label styling */
+    .bottom-instruction-footer {
+      position: absolute;
+      bottom: 25px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #4b5563;
+      font-weight: 500;
+      z-index: 50;
+      pointer-events: none;
+      transition: color 0.4s ease;
     }
 
-    .help-content {
-      font-size: 0.85rem;
-      line-height: 1.6;
-      color: #9ca3af;
-      overflow-y: auto;
-    }
-    .help-content h3 {
-      color: var(--glow-cyan);
-      font-size: 0.9rem;
-      margin-top: 15px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+    .dashboard:hover ~ .bottom-instruction-footer {
+      color: rgba(0, 242, 255, 0.65);
     }
   </style>
 </head>
 <body>
 
-  <div id="bg-layer-1"></div>
-  <div id="bg-layer-2"></div>
+  <div id="bg-surface"></div>
+  <div id="hud-overlay"></div>
+
+  <div class="minute-tracker-banner" id="minuteBanner">SANCTUARY HUD PRO ACTIVE</div>
 
   <div class="dashboard" id="mainConsole">
     <div class="target-hud">
@@ -503,10 +522,6 @@
           </div>
           <input type="range" id="vol-userSong" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume('userSong')">
         </div>
-        <label class="custom-file-upload">
-          📁 Upload Custom Local Study Song
-          <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(this)">
-        </label>
       </div>
     </div>
 
@@ -517,19 +532,12 @@
       </div>
       
       <div class="bundle-tab-row">
-        <button class="bundle-btn active" onclick="switchBundle('my_themes', this)">🏠 Workspace</button>
-        <button class="bundle-btn" onclick="switchBundle('anime', this)">🌸 Anime</button>
+        <button class="bundle-btn active">🏠 Workspace</button>
       </div>
 
       <div class="mixer-group">
         <div class="wallpaper-selector-grid" id="thumbGrid"></div>
-        
         <button class="commit-btn" onclick="togglePanel('bgPanel', false)">✓ Save Themes</button>
-        
-        <label class="custom-file-upload" style="margin-top:10px;">
-          🖼 Insert Custom Local Wallpaper File
-          <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
-        </label>
       </div>
     </div>
 
@@ -548,95 +556,37 @@
 
   </div>
 
-  <script>
-    // --- EXPLICIT RELATIVE FILE REPOSITORY ARCHITECTURE ---
-    const themeRepository = {
-      my_themes: [
-        { url: "images/bg_1.jpg", selected: true },
-        { url: "images/bg_2.jpg", selected: false },
-        { url: "images/gb_3.jpg", selected: false } 
-      ],
-      anime: [
-        { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: false },
-        { url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600", selected: false }
-      ]
-    };
+  <div class="bottom-instruction-footer">to turn on music hover to mixer</div>
 
-    let activeBundle = 'my_themes';
-    let currentWallpaperIndex = 0;
-    let activeLayer = 1;
+  <script>
+    // Simplified Clean Path Catalog Repository 
+    const themeRepository = [
+      { url: "images/bg_1.jpg", selected: true },
+      { url: "images/bg_2.jpg", selected: false },
+      { url: "images/gb_3.jpg", selected: false }
+    ];
 
     function buildWallpaperGrid() {
       const grid = document.getElementById('thumbGrid');
       grid.innerHTML = '';
       
-      themeRepository[activeBundle].forEach((item) => {
+      themeRepository.forEach((item) => {
         const thumb = document.createElement('div');
         thumb.className = `wall-thumb ${item.selected ? 'selected' : ''}`;
         thumb.style.backgroundImage = `url('${item.url}')`;
         
         thumb.onclick = () => {
-          themeRepository[activeBundle].forEach(w => w.selected = false);
+          themeRepository.forEach(w => w.selected = false);
           item.selected = true;
           
           document.querySelectorAll('.wall-thumb').forEach(t => t.classList.remove('selected'));
           thumb.classList.add('selected');
           
-          changeBackground(item.url);
+          // Direct DOM replacement bypasses layer masking bugs entirely
+          document.getElementById('bg-surface').style.backgroundImage = `url('${item.url}')`;
         };
         grid.appendChild(thumb);
       });
-    }
-
-    function switchBundle(bundleKey, targetBtn) {
-      document.querySelectorAll('.bundle-btn').forEach(b => b.classList.remove('active'));
-      targetBtn.classList.add('active');
-      activeBundle = bundleKey;
-      buildWallpaperGrid();
-    }
-
-    function changeBackground(imgUrl) {
-      document.getElementById('bg-layer-1').style.backgroundImage = `url('${imgUrl}')`;
-      document.getElementById('bg-layer-2').style.backgroundImage = `url('${imgUrl}')`;
-    }
-
-    function rotateWallpaper() {
-      let masterPool = [];
-      Object.keys(themeRepository).forEach(key => {
-        masterPool = masterPool.concat(themeRepository[key].filter(w => w.selected));
-      });
-
-      if (masterPool.length <= 1) return;
-      currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
-      
-      const nextImg = masterPool[currentWallpaperIndex].url;
-      const layer1 = document.getElementById('bg-layer-1');
-      const layer2 = document.getElementById('bg-layer-2');
-
-      if (activeLayer === 1) {
-        layer2.style.backgroundImage = `url('${nextImg}')`;
-        layer1.style.opacity = '0';
-        layer2.style.opacity = '1';
-        activeLayer = 2;
-      } else {
-        layer1.style.backgroundImage = `url('${nextImg}')`;
-        layer2.style.opacity = '0';
-        layer1.style.opacity = '1';
-        activeLayer = 1;
-      }
-    }
-
-    function handleImageUpload(input) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          themeRepository[activeBundle].forEach(w => w.selected = false);
-          themeRepository[activeBundle].push({ url: e.target.result, selected: true });
-          buildWallpaperGrid();
-          changeBackground(e.target.result);
-        }
-        reader.readAsDataURL(input.files[0]);
-      }
     }
 
     // --- TIMELOCK ENGINE (20 MINUTES FOCUS BLOCKS) ---
@@ -646,6 +596,9 @@
     let timeLeft = 20 * 60; 
     let userCustomFocusTime = 20 * 60; 
     let microModulationInterval; 
+
+    // Minute tracking storage variable
+    let totalSecondsElapsed = 0;
 
     const alarmAudio = new Audio("audio/alarm.mp3");
     alarmAudio.crossOrigin = "anonymous";
@@ -675,6 +628,7 @@
       updateTimerDisplay();
     }
 
+    // --- SOUND ENGINE MODULATION DECK ---
     function startAudioModulation() {
       microModulationInterval = setInterval(() => {
         ['rain', 'piano'].forEach(trackKey => {
@@ -701,7 +655,7 @@
           if(tracks[key] && tracks[key].src) {
             tracks[key].play().then(() => {
               if (!activeTracks[key]) tracks[key].pause();
-            }).catch(e => console.log("Context initialized"));
+            }).catch(e => console.log("Context primed"));
           } 
         } catch(e){} 
       });
@@ -732,6 +686,14 @@
             handleCycleCompletion();
           } else {
             timeLeft--;
+            totalSecondsElapsed++;
+            
+            // Dynamic Header Message Generator: Prints exact elapsed minutes inside top layout
+            if (totalSecondsElapsed % 60 === 0) {
+              const minutesOver = totalSecondsElapsed / 60;
+              document.getElementById('minuteBanner').innerText = `${minutesOver} MIN OVER`;
+            }
+
             updateTimerDisplay();
           }
         }, 1000);
@@ -774,6 +736,9 @@
       isRunning = false;
       isBreakMode = false;
       timeLeft = userCustomFocusTime;
+      totalSecondsElapsed = 0; 
+      
+      document.getElementById('minuteBanner').innerText = "SANCTUARY HUD PRO ACTIVE";
       
       const consolePanel = document.getElementById('mainConsole');
       const hintText = document.getElementById('timerHint');
@@ -807,19 +772,6 @@
 
     const activeTracks = { rain: false, piano: false, userSong: false };
 
-    function handleAudioUpload(input) {
-      if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const objectURL = URL.createObjectURL(file);
-        
-        if (tracks.userSong) tracks.userSong.pause();
-        tracks.userSong = new Audio(objectURL);
-        tracks.userSong.loop = true;
-        
-        document.getElementById('userTrackName').innerText = file.name;
-      }
-    }
-
     function toggleAudio(track) {
       if (!tracks[track]) return;
       const btn = document.getElementById(`btn-${track}`);
@@ -833,7 +785,7 @@
             activeTracks[track] = true;
             btn.classList.add('active-btn');
           })
-          .catch(e => console.log("Audio stream attached successfully."));
+          .catch(e => console.log("Audio load error handling bypass"));
       } else {
         tracks[track].pause();
         activeTracks[track] = false;
@@ -901,12 +853,6 @@
     window.onload = () => {
       loadSavedTargetData();
       buildWallpaperGrid();
-      
-      // Set baseline default tracking styles explicitly on window bootup sequence
-      document.getElementById('bg-layer-1').style.backgroundImage = "url('images/bg_1.jpg')";
-      document.getElementById('bg-layer-2').style.backgroundImage = "url('images/bg_1.jpg')";
-      
-      setInterval(rotateWallpaper, 60000); 
     };
   </script>
 </body>
