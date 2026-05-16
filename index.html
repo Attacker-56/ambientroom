@@ -371,24 +371,6 @@
       font-weight: 500;
     }
 
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 35%;
-      background: rgba(255, 255, 255, 0.08);
-      height: 4px;
-      border-radius: 2px;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #9ca3af;
-      cursor: pointer;
-    }
-
     .wallpaper-selector-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -403,18 +385,18 @@
       background-position: center;
       cursor: pointer;
       border: 2px solid transparent;
-      opacity: 0.4;
+      opacity: 0.5;
       transition: all 0.2s ease;
     }
 
     .wall-thumb.selected {
       border-color: var(--glow-cyan);
       opacity: 1;
+      box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
     }
 
-    /* Premium Done / Commit Button Styling */
+    /* Premium Save Button Styling */
     .commit-btn {
-      grid-column: span 3;
       background: rgba(0, 242, 255, 0.1);
       border: 1px solid var(--glow-cyan);
       color: var(--glow-cyan);
@@ -426,6 +408,7 @@
       font-weight: 500;
       margin-top: 15px;
       cursor: pointer;
+      width: 100%;
       transition: all 0.3s ease;
     }
 
@@ -436,7 +419,6 @@
     }
 
     .custom-file-upload {
-      grid-column: span 3;
       background: rgba(255, 255, 255, 0.02);
       border: 1px dashed rgba(255, 255, 255, 0.1);
       padding: 10px;
@@ -445,6 +427,8 @@
       font-size: 0.8rem;
       cursor: pointer;
       color: #9ca3af;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .help-content {
@@ -540,7 +524,7 @@
       <div class="mixer-group">
         <div class="wallpaper-selector-grid" id="thumbGrid"></div>
         
-        <button class="commit-btn" onclick="commitWallpaperSelection()">✓ Save Themes</button>
+        <button class="commit-btn" onclick="togglePanel('bgPanel', false)">✓ Save Themes</button>
         
         <label class="custom-file-upload" style="margin-top:10px;">
           🖼 Insert Custom Local Wallpaper File
@@ -557,7 +541,6 @@
       <div class="help-content">
         <h3>⏱ Customizable Timer Controls</h3>
         <p>Pause the current timer sessions first, then simply click directly on the clock digits to write any custom length mapping.</p>
-        
         <h3>🛑 Automatic Break Transition Mode</h3>
         <p>When the focus clock finishes running, the application executes your repository's alarm file. It automatically transitions directly into a locked 5-minute break cycle.</p>
       </div>
@@ -566,12 +549,23 @@
   </div>
 
   <script>
-    // --- HIGH-FIDELITY BUNDLED WALLPAPER REPOSITORY DATABASE ---
+    // --- HOSTING PATH RESOLVER ENGINE ---
+    const getRepoPath = () => {
+      const loc = window.location;
+      const pathSegments = loc.pathname.split('/').filter(s => s.length > 0);
+      if (loc.hostname.includes('github.io') && pathSegments.length > 0) {
+        return `/${pathSegments[0]}/`;
+      }
+      return '/';
+    };
+    
+    const rootPath = getRepoPath();
+
     const themeRepository = {
       my_themes: [
-        { url: "./images/bg_1.jpg", selected: true },
-        { url: "./images/bg_2.jpg", selected: true },
-        { url: "./images/gb_3.jpg", selected: true } 
+        { url: `${rootPath}images/bg_1.jpg`, selected: true },
+        { url: `${rootPath}images/bg_2.jpg`, selected: false },
+        { url: `${rootPath}images/gb_3.jpg`, selected: false } 
       ],
       anime: [
         { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600", selected: false },
@@ -585,17 +579,21 @@
 
     function buildWallpaperGrid() {
       const grid = document.getElementById('thumbGrid');
-      // Save Done button element reference
-      const commitBtn = grid.querySelector('.commit-btn');
       grid.innerHTML = '';
       
       themeRepository[activeBundle].forEach((item) => {
         const thumb = document.createElement('div');
         thumb.className = `wall-thumb ${item.selected ? 'selected' : ''}`;
         thumb.style.backgroundImage = `url('${item.url}')`;
+        
         thumb.onclick = () => {
-          item.selected = !item.selected;
-          thumb.classList.toggle('selected', item.selected);
+          themeRepository[activeBundle].forEach(w => w.selected = false);
+          item.selected = true;
+          
+          document.querySelectorAll('.wall-thumb').forEach(t => t.classList.remove('selected'));
+          thumb.classList.add('selected');
+          
+          changeBackground(item.url);
         };
         grid.appendChild(thumb);
       });
@@ -608,10 +606,21 @@
       buildWallpaperGrid();
     }
 
-    // Force rendering sequence update instantly when saving selection
-    function commitWallpaperSelection() {
-      togglePanel('bgPanel', false);
-      rotateWallpaper();
+    function changeBackground(imgUrl) {
+      const layer1 = document.getElementById('bg-layer-1');
+      const layer2 = document.getElementById('bg-layer-2');
+
+      if (activeLayer === 1) {
+        layer2.style.backgroundImage = `url('${imgUrl}')`;
+        layer1.style.opacity = '0';
+        layer2.style.opacity = '1';
+        activeLayer = 2;
+      } else {
+        layer1.style.backgroundImage = `url('${imgUrl}')`;
+        layer2.style.opacity = '0';
+        layer1.style.opacity = '1';
+        activeLayer = 1;
+      }
     }
 
     function rotateWallpaper() {
@@ -620,47 +629,33 @@
         masterPool = masterPool.concat(themeRepository[key].filter(w => w.selected));
       });
 
-      if (masterPool.length === 0) return;
-
+      if (masterPool.length <= 1) return;
       currentWallpaperIndex = (currentWallpaperIndex + 1) % masterPool.length;
-      const nextImg = masterPool[currentWallpaperIndex].url;
-
-      const layer1 = document.getElementById('bg-layer-1');
-      const layer2 = document.getElementById('bg-layer-2');
-
-      if (activeLayer === 1) {
-        layer2.style.backgroundImage = `url('${nextImg}')`;
-        layer1.style.opacity = '0';
-        layer2.style.opacity = '1';
-        activeLayer = 2;
-      } else {
-        layer1.style.backgroundImage = `url('${nextImg}')`;
-        layer2.style.opacity = '0';
-        layer1.style.opacity = '1';
-        activeLayer = 1;
-      }
+      changeBackground(masterPool[currentWallpaperIndex].url);
     }
 
     function handleImageUpload(input) {
       if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
+          themeRepository[activeBundle].forEach(w => w.selected = false);
           themeRepository[activeBundle].push({ url: e.target.result, selected: true });
           buildWallpaperGrid();
+          changeBackground(e.target.result);
         }
         reader.readAsDataURL(input.files[0]);
       }
     }
 
-    // --- AUTOMATED BREAK ENGINE TIMELOCK ENGINE ---
+    // --- TIMELOCK ENGINE (20 MINUTES FOCUS BLOCKS) ---
     let countdown;
     let isRunning = false;
     let isBreakMode = false;
-    let timeLeft = 20 * 60; // 20 Minute Focus Session Baseline
+    let timeLeft = 20 * 60; 
     let userCustomFocusTime = 20 * 60; 
     let microModulationInterval; 
 
-    const alarmAudio = new Audio("./audio/alarm.mp3");
+    const alarmAudio = new Audio(`${rootPath}audio/alarm.mp3`);
     alarmAudio.crossOrigin = "anonymous";
 
     function pauseOnEdit() {
@@ -688,7 +683,7 @@
       updateTimerDisplay();
     }
 
-    // --- SUBTLE AUDIO ENVIRONMENT MODULATION ENGINE ---
+    // --- SOUND ENGINE MODULATION DECK ---
     function startAudioModulation() {
       microModulationInterval = setInterval(() => {
         ['rain', 'piano'].forEach(trackKey => {
@@ -710,13 +705,12 @@
     }
 
     function toggleTimer() {
-      // Repaired Audio Warmup Pipeline: Skips the separate alarm track to avoid playing it at startup
       Object.keys(tracks).forEach(key => { 
         try { 
           if(tracks[key] && tracks[key].src) {
             tracks[key].play().then(() => {
               if (!activeTracks[key]) tracks[key].pause();
-            }).catch(e => console.log("Context primed safely"));
+            }).catch(e => console.log("Engine active"));
           } 
         } catch(e){} 
       });
@@ -734,7 +728,6 @@
         playIcon.innerText = '❚❚';
         document.getElementById('timer').contentEditable = "false";
         
-        // Autoplay Logic: Instantly activates the rain track on start
         if (!isBreakMode && !activeTracks.rain && !activeTracks.piano && !activeTracks.userSong) {
           toggleAudio('rain');
         }
@@ -811,10 +804,10 @@
       document.getElementById('timer').innerText = `${minutes}:${seconds}`;
     }
 
-    // --- SYSTEM AUDIO OPERATIONS ---
+    // --- SYSTEM AUDIO DECK ---
     const tracks = {
-      rain: new Audio("./audio/rain.mp3"),
-      piano: new Audio("./audio/piano.mp3"),
+      rain: new Audio(`${rootPath}audio/rain.mp3`),
+      piano: new Audio(`${rootPath}audio/piano.mp3`),
       userSong: null
     };
 
@@ -917,8 +910,12 @@
     window.onload = () => {
       loadSavedTargetData();
       buildWallpaperGrid();
-      // Locked start background cleanly to your primary repository path asset
-      document.getElementById('bg-layer-1').style.backgroundImage = "url('./images/bg_1.jpg')";
+      
+      // FIX: Synchronized initialization to handle priorities cleanly
+      const initialBg = themeRepository.my_themes[0].url;
+      document.getElementById('bg-layer-1').style.backgroundImage = `url('${initialBg}')`;
+      document.getElementById('bg-layer-2').style.backgroundImage = `url('${initialBg}')`;
+      
       setInterval(rotateWallpaper, 60000); 
     };
   </script>
